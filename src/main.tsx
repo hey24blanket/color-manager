@@ -1,7 +1,8 @@
 import React,{useState,useEffect,useRef} from 'react';
 import {createRoot} from 'react-dom/client';
 import {Plus,Palette,Image as ImageIcon,Contrast,Search,Download,Upload,History,Sun,Moon,Monitor,Globe,Star,MoreHorizontal,Copy,Pencil,Trash2,GripVertical,ArrowLeft,ArrowRight,ChevronDown,X,Check,Undo2,Redo2,Move,Maximize2,RotateCcw,ShieldCheck,ArrowUpRight,Layers,ChevronRight,Eye,SlidersHorizontal} from 'lucide-react';
-import {inject,track} from '@vercel/analytics';
+import {inject} from '@vercel/analytics';
+import {beforeSend,track} from './analytics-client';
 import {languages,dict,sampleNames} from './i18n';
 import {blank,hex,rgb,fromRGB,hsl,fromHSL,format,contrast,color,group,duplicate,importData,cssExport,samples,validate,type Workspace,type Group,type Color} from './domain';
 import * as db from './storage';
@@ -25,7 +26,7 @@ function App(){
  const canvasRef=useRef<HTMLCanvasElement>(null),worker=useRef<Worker|null>(null),imageToken=useRef(0);
  const [fg,setFg]=useState('#28374A'),[bg,setBg]=useState('#F5EDD9'),[ratio,setRatio]=useState<number|null>(null),[legacy,setLegacy]=useState<string|null>(null);
  const notify=(s:string)=>{setToast(s);window.setTimeout(()=>setToast(''),3500)};
- useEffect(()=>{inject();let stopped=false;db.init().then(v=>{if(stopped)return;setW(v);setStatus('saved');ready.current=true}).catch(()=>{setOnline(false);setStatus('failed');ready.current=true});try{setLegacy(localStorage.getItem('hue-library-pro-data-v5'))}catch{};const sync=async()=>{if(!ready.current||busy.current||gesture.current)return;try{const latest=await db.read();if(latest.revision>live.current.revision)setW(latest)}catch{}};if('BroadcastChannel'in window){channel.current=new BroadcastChannel('cm-revisions');channel.current.onmessage=sync}window.addEventListener('focus',sync);window.addEventListener('storage',sync);return()=>{stopped=true;channel.current?.close();window.removeEventListener('focus',sync);window.removeEventListener('storage',sync)}},[]);
+ useEffect(()=>{inject({beforeSend});let stopped=false;db.init().then(v=>{if(stopped)return;setW(v);setStatus('saved');ready.current=true}).catch(()=>{setOnline(false);setStatus('failed');ready.current=true});try{setLegacy(localStorage.getItem('hue-library-pro-data-v5'))}catch{};const sync=async()=>{if(!ready.current||busy.current||gesture.current)return;try{const latest=await db.read();if(latest.revision>live.current.revision)setW(latest)}catch{}};if('BroadcastChannel'in window){channel.current=new BroadcastChannel('cm-revisions');channel.current.onmessage=sync}window.addEventListener('focus',sync);window.addEventListener('storage',sync);return()=>{stopped=true;channel.current?.close();window.removeEventListener('focus',sync);window.removeEventListener('storage',sync)}},[]);
  useEffect(()=>{const mq=matchMedia('(prefers-color-scheme:dark)');const apply=()=>document.documentElement.dataset.theme=theme==='system'?(mq.matches?'dark':'light'):theme;apply();put('theme',theme);mq.addEventListener('change',apply);return()=>mq.removeEventListener('change',apply)},[theme]);
  useEffect(()=>{if(modal){returnFocus.current=document.activeElement as HTMLElement;dialogRef.current?.showModal()}else{dialogRef.current?.close();returnFocus.current?.focus()}},[!!modal]);
  useEffect(()=>{if(!img||!canvasRef.current)return;const c=canvasRef.current,s=Math.min(1,1200/Math.max(img.width,img.height));c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d')!.drawImage(img,0,0,c.width,c.height)},[img,tool]);
